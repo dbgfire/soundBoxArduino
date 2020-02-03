@@ -2,13 +2,11 @@
  * à faire:
  * Switch
  * Index enrengistrement dynamique
- * LED bouton Enrengistrement : bug
  */
 
 #include "Midi.h"
 
 #define MAX_PISTE 3
-#define MAX_INSTRUMENT 100
 
 #define PIN_BUTTON_1 5
 #define PIN_BUTTON_2 4
@@ -27,12 +25,13 @@
 #define PIN_BUTTON_ENRENGISTREMENT 7
 
 #define MAX_MAX_NOTE 100
-
-int max_note = MAX_MAX_NOTE;
+#define MAX_MAX_INSTRUMENT 100
 
 int indexPiste = 0;
 int indexNote[3];
 int indexInstrument[3];
+int max_note[3];
+int max_instrument[3];
 
 int button1State = LOW;
 int button2State = LOW;
@@ -42,7 +41,7 @@ int buttonEnrengistrementState = LOW;
 
 int matrixVitesse[MAX_PISTE][MAX_MAX_NOTE];
 int matrixNote[MAX_PISTE][MAX_MAX_NOTE];
-int matrixInstrument[MAX_PISTE][MAX_INSTRUMENT];
+int matrixInstrument[MAX_PISTE][MAX_MAX_INSTRUMENT];
 
 bool inputButton1 = false;
 bool toogle1 = false;
@@ -51,7 +50,11 @@ bool toogle2 = false;
 bool inputButton3 = false;
 bool toogle3 = false;
 bool inputButtonSwitch = false;
+bool inputButtonSwitch2 = false;
+bool LED_Switch_Toogle = false;
 bool toogleSwitch = false;
+int countToogleSwitch = 0;
+int countLoop = 0;
 bool inputButtonEnrengistrement = false;
 bool toogleEnrengistrement = false;
 
@@ -66,19 +69,21 @@ void setup() {
   Serial.begin(9600);
   player.beginInMidiFmt();
   for(i=0; i<MAX_PISTE; i++){
-    for(j=0; j<max_note; j++){
+    for(j=0; j<MAX_MAX_NOTE; j++){
       matrixVitesse[i][j] = 3000;
       matrixNote[i][j] = 100;
     }
   }
   for(i=0; i<MAX_PISTE; i++){
-    for(j=0; j<MAX_INSTRUMENT; j++){
+    for(j=0; j<MAX_MAX_INSTRUMENT; j++){
       matrixInstrument[i][j] = 10;
     }
   }
   for(i=0; i<MAX_PISTE; i++){  
     indexNote[i] = 0;
     indexInstrument[i] = 0;
+    max_note[i] = 0;
+    max_instrument[i] = 0;
   }
   
   pinMode(PIN_BUTTON_1, INPUT);
@@ -105,19 +110,107 @@ void loop() {
   buttonSwitchState = digitalRead(PIN_BUTTON_SWITCH);
   buttonEnrengistrementState = digitalRead(PIN_BUTTON_ENRENGISTREMENT);
 
-  if(buttonSwitchState == HIGH){
-    inputButtonSwitch = true;
+  if(buttonSwitchState == HIGH && !inputButtonSwitch2){
+    inputButtonSwitch2 = true;
   }
-  if(inputButtonSwitch == true && buttonSwitchState == LOW){
-    inputButtonSwitch = false;
-    indexPiste++;
-    if(indexPiste >= MAX_PISTE){
-      indexPiste = 0;
+  if(inputButtonSwitch2 == true){
+    countLoop++;
+    if(countLoop>=2000){
+      Serial.print("CHECK switch: ");
+      Serial.println(indexPiste);
+      countLoop = 0;
+      switch(indexPiste){
+      case 0:
+        if(LED_Switch_Toogle){
+          LED_Switch_Toogle = false;
+          digitalWrite(PIN_LED_1, LOW);
+        }else{
+          LED_Switch_Toogle = true;
+          digitalWrite(PIN_LED_1, HIGH);
+          countToogleSwitch++;
+        }
+        if(countToogleSwitch >= 3)
+        {
+          if(toogle1) digitalWrite(PIN_LED_1, HIGH);
+          else  digitalWrite(PIN_LED_1, LOW);
+          if(toogle2) digitalWrite(PIN_LED_2, HIGH);
+          else  digitalWrite(PIN_LED_2, LOW);
+          if(toogle3) digitalWrite(PIN_LED_3, HIGH);
+          else  digitalWrite(PIN_LED_3, LOW);
+          countToogleSwitch = 0;
+          inputButtonSwitch2 = false;
+        }
+        break;
+      case 1:
+        if(LED_Switch_Toogle){
+          LED_Switch_Toogle = false;
+          digitalWrite(PIN_LED_2, LOW);
+        }else{
+          LED_Switch_Toogle = true;
+          digitalWrite(PIN_LED_2, HIGH);
+          countToogleSwitch++;
+        }
+        if(countToogleSwitch >= 3)
+        {
+          if(toogle1) digitalWrite(PIN_LED_1, HIGH);
+          else  digitalWrite(PIN_LED_1, LOW);
+          if(toogle2) digitalWrite(PIN_LED_2, HIGH);
+          else  digitalWrite(PIN_LED_2, LOW);
+          if(toogle3) digitalWrite(PIN_LED_3, HIGH);
+          else  digitalWrite(PIN_LED_3, LOW);
+          countToogleSwitch = 0;
+          inputButtonSwitch2 = false;
+        }
+        break;
+      case 2:
+        if(LED_Switch_Toogle){
+          LED_Switch_Toogle = false;
+          digitalWrite(PIN_LED_3, LOW);
+        }else{
+          LED_Switch_Toogle = true;
+          digitalWrite(PIN_LED_3, HIGH);
+          countToogleSwitch++;
+        }
+        if(countToogleSwitch >= 3)
+        {
+          if(toogle1) digitalWrite(PIN_LED_1, HIGH);
+          else  digitalWrite(PIN_LED_1, LOW);
+          if(toogle2) digitalWrite(PIN_LED_2, HIGH);
+          else  digitalWrite(PIN_LED_2, LOW);
+          if(toogle3) digitalWrite(PIN_LED_3, HIGH);
+          else  digitalWrite(PIN_LED_3, LOW);
+          countToogleSwitch = 0;
+          inputButtonSwitch2 = false;
+        }
+        break;
+      default:
+        break;
     }
-    Serial.println("----------------");
-    Serial.print("Switch piste: ");
-    Serial.println(indexPiste);
+    }
+
+    if(buttonSwitchState == HIGH){
+      if(toogle1) digitalWrite(PIN_LED_1, HIGH);
+      else  digitalWrite(PIN_LED_1, LOW);
+      if(toogle2) digitalWrite(PIN_LED_2, HIGH);
+      else  digitalWrite(PIN_LED_2, LOW);
+      if(toogle3) digitalWrite(PIN_LED_3, HIGH);
+      else  digitalWrite(PIN_LED_3, LOW);
+      inputButtonSwitch = true;
+      LED_Switch_Toogle = false;
+      countToogleSwitch = 0;
+    }
+    if(inputButtonSwitch == true && buttonSwitchState == LOW){
+      inputButtonSwitch = false;
+      indexPiste++;
+      if(indexPiste >= MAX_PISTE){
+        indexPiste = 0;
+      }
+      Serial.println("----------------");
+      Serial.print("Switch piste: ");
+      Serial.println(indexPiste);
+    }
   }
+
     
   if(button1State == HIGH){
     inputButton1 = true;
@@ -131,6 +224,8 @@ void loop() {
       toogle1 = false;
       time_for_action_1 = 1000000000;
       Serial.println(toogle1);
+      for(i=0; i<128;i++)
+        midiNoteOff(0, i,0);
     }else{
       Serial.println("----------------");
       Serial.print("Piste 1: ");
@@ -153,6 +248,8 @@ void loop() {
       toogle2 = false;
       time_for_action_2 = 1000000000;
       Serial.println(toogle2);
+      for(i=0; i<128;i++)
+        midiNoteOff(1, i,0);
     }else{
       Serial.println("----------------");
       Serial.print("Piste 2: ");
@@ -175,6 +272,8 @@ void loop() {
       toogle3 = false;
       time_for_action_3 = 1000000000;
       Serial.println(toogle3);
+      for(i=0; i<128;i++)
+        midiNoteOff(2, i,0);
     }else{
       Serial.println("----------------");
       Serial.print("Piste 3: ");
@@ -193,13 +292,21 @@ void loop() {
     if(toogleEnrengistrement){
       Serial.println("----------------");
       Serial.println("Enrengistrement OFF");
-      digitalWrite(PIN_LED_ENRENGISTREMENT, HIGH);
+      digitalWrite(PIN_LED_ENRENGISTREMENT, LOW);
       toogleEnrengistrement = false;
-   //   max_note = index
+      max_note[indexPiste] = indexNote[indexPiste];
+      max_instrument[indexPiste] = indexInstrument[indexPiste];
+      Serial.println("=============================================================");
+      Serial.print("indexPiste =  ");
+      Serial.println(indexPiste);
+      Serial.print("max_note =  ");
+      Serial.println(max_note[indexPiste]);
     }else{
       toogleEnrengistrement = true;
       Serial.println("----------------");
       Serial.println("Enrengistrement ON");
+      indexNote[indexPiste] = 0;
+      indexInstrument[indexPiste] = 0;
       digitalWrite(PIN_LED_ENRENGISTREMENT, HIGH);
     }
   }
@@ -220,21 +327,37 @@ void loop() {
     for(i=0; i<128;i++)
       midiNoteOff(0, i,0);
     time_for_action_1 = millis() + matrixVitesse[0][indexNote[0]];
-    Serial.println(time_for_action_1);
+    //Serial.println(time_for_action_1);
     midiWriteData(0xC0, matrixInstrument[0][indexInstrument[0]], 0);
     midiNoteOn(0, matrixNote[0][indexNote[0]],127);
     Serial.print("indexNote: ");
     Serial.println(indexNote[0]);
     Serial.print("note: ");
     Serial.println(matrixNote[0][indexNote[0]]);
+    Serial.print("IndexInstrument: ");
+    Serial.println(indexInstrument[0]);
+    Serial.print("instrument: ");
+    Serial.println(matrixInstrument[0][indexInstrument[0]]);
 
-    indexNote[0]++;
-    if(indexNote[0] >= max_note){
-      indexNote[0] = 0;
-    }
-    indexInstrument[0]++;
-    if(indexInstrument[0] >= MAX_INSTRUMENT){
-      indexInstrument[0] = 0;
+    if(toogleEnrengistrement && indexPiste == 0)
+    {
+      indexNote[0]++;
+      if(indexNote[0] >= 100){
+        indexNote[0] = 0;
+      }
+      indexInstrument[0]++;
+      if(indexInstrument[0] >= 100){
+        indexInstrument[0] = 0;
+      }
+    }else{
+      indexNote[0]++;
+      if(indexNote[0] >= max_note[0]){
+        indexNote[0] = 0;
+      }
+      indexInstrument[0]++;
+      if(indexInstrument[0] >= max_instrument[0]){
+        indexInstrument[0] = 0;
+      }
     }
   }
   
@@ -242,21 +365,37 @@ void loop() {
     for(i=0; i<128;i++)
       midiNoteOff(1, i,0);
     time_for_action_2 = millis() + matrixVitesse[1][indexNote[1]];
-    Serial.println(time_for_action_2);
-    midiWriteData(0xC0, matrixInstrument[1][indexInstrument[1]], 0);
+   // Serial.println(time_for_action_2);
+    midiWriteData(0xC1, matrixInstrument[1][indexInstrument[1]], 0);
     midiNoteOn(1, matrixNote[1][indexNote[1]],127);
     Serial.print("indexNote: ");
     Serial.println(indexNote[1]);
     Serial.print("note: ");
     Serial.println(matrixNote[1][indexNote[1]]);
+    Serial.print("IndexInstrument: ");
+    Serial.println(indexInstrument[1]);
+    Serial.print("instrument: ");
+    Serial.println(matrixInstrument[1][indexInstrument[1]]);
 
-    indexNote[1]++;
-    if(indexNote[1] >= max_note){
-      indexNote[1] = 0;
-    }
-    indexInstrument[1]++;
-    if(indexInstrument[1] >= MAX_INSTRUMENT){
-      indexInstrument[1] = 0;
+    if(toogleEnrengistrement && indexPiste == 1)
+    {
+      indexNote[1]++;
+      if(indexNote[1] >= 100){
+        indexNote[1] = 0;
+      }
+      indexInstrument[1]++;
+      if(indexInstrument[1] >= 100){
+        indexInstrument[1] = 0;
+      }
+    }else{
+      indexNote[1]++;
+      if(indexNote[1] >= max_note[1]){
+        indexNote[1] = 0;
+      }
+      indexInstrument[1]++;
+      if(indexInstrument[1] >= max_instrument[1]){
+        indexInstrument[1] = 0;
+      }
     }
   }
 
@@ -265,21 +404,37 @@ void loop() {
     for(i=0; i<128;i++)
       midiNoteOff(2, i,0);
     time_for_action_3 = millis() + matrixVitesse[2][indexNote[2]];
-    Serial.println(time_for_action_2);
-    midiWriteData(0xC0, matrixInstrument[2][indexInstrument[2]], 0);
+    //Serial.println(time_for_action_2);
+    midiWriteData(0xC2, matrixInstrument[2][indexInstrument[2]], 0);
     midiNoteOn(2, matrixNote[2][indexNote[2]],127);
     Serial.print("indexNote: ");
     Serial.println(indexNote[2]);
     Serial.print("note: ");
     Serial.println(matrixNote[2][indexNote[2]]);
+    Serial.print("IndexInstrument: ");
+    Serial.println(indexInstrument[2]);
+    Serial.print("instrument: ");
+    Serial.println(matrixInstrument[2][indexInstrument[2]]);
 
-    indexNote[2]++;
-    if(indexNote[2] >= max_note){
-      indexNote[2] = 0;
-    }
-    indexInstrument[2]++;
-    if(indexInstrument[2] >= MAX_INSTRUMENT){
-      indexInstrument[2] = 0;
+    if(toogleEnrengistrement && indexPiste == 2)
+    {
+      indexNote[2]++;
+      if(indexNote[2] >= 100){
+        indexNote[2] = 0;
+      }
+      indexInstrument[2]++;
+      if(indexInstrument[2] >= 100){
+        indexInstrument[2] = 0;
+      }
+    }else{
+      indexNote[2]++;
+      if(indexNote[2] >= max_note[2]){
+        indexNote[2] = 0;
+      }
+      indexInstrument[2]++;
+      if(indexInstrument[2] >= max_instrument[2]){
+        indexInstrument[2] = 0;
+      }
     }
   }
 //  delay(1000);
