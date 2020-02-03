@@ -1,12 +1,23 @@
+/*
+ * à faire:
+ * Switch
+ * Index enrengistrement dynamique
+ * LED bouton Enrengistrement : bug
+ */
+
 #include "Midi.h"
 
 #define MAX_PISTE 3
-#define MAX_NOTE 100
 #define MAX_INSTRUMENT 100
 
 #define PIN_BUTTON_1 5
 #define PIN_BUTTON_2 4
 #define PIN_BUTTON_3 3
+
+#define PIN_LED_1 8
+#define PIN_LED_2 9
+#define PIN_LED_3 10
+#define PIN_LED_ENRENGISTREMENT 11
 
 #define PIN_POTAR_NOTE A8
 #define PIN_POTAR_VITESSE A9
@@ -15,6 +26,9 @@
 #define PIN_BUTTON_SWITCH 6
 #define PIN_BUTTON_ENRENGISTREMENT 7
 
+#define MAX_MAX_NOTE 100
+
+int max_note = MAX_MAX_NOTE;
 
 int indexPiste = 0;
 int indexNote[3];
@@ -26,8 +40,8 @@ int button3State = LOW;
 int buttonSwitchState = LOW;
 int buttonEnrengistrementState = LOW;
 
-int matrixVitesse[MAX_PISTE][MAX_NOTE];
-int matrixNote[MAX_PISTE][MAX_NOTE];
+int matrixVitesse[MAX_PISTE][MAX_MAX_NOTE];
+int matrixNote[MAX_PISTE][MAX_MAX_NOTE];
 int matrixInstrument[MAX_PISTE][MAX_INSTRUMENT];
 
 bool inputButton1 = false;
@@ -41,7 +55,6 @@ bool toogleSwitch = false;
 bool inputButtonEnrengistrement = false;
 bool toogleEnrengistrement = false;
 
-
 unsigned long time_for_action_1 = 1000000000;
 unsigned long time_for_action_2 = 1000000000;
 unsigned long time_for_action_3 = 1000000000;
@@ -53,7 +66,7 @@ void setup() {
   Serial.begin(9600);
   player.beginInMidiFmt();
   for(i=0; i<MAX_PISTE; i++){
-    for(j=0; j<MAX_NOTE; j++){
+    for(j=0; j<max_note; j++){
       matrixVitesse[i][j] = 3000;
       matrixNote[i][j] = 100;
     }
@@ -74,12 +87,16 @@ void setup() {
   pinMode(PIN_BUTTON_SWITCH, INPUT);
   pinMode(PIN_BUTTON_ENRENGISTREMENT, INPUT);
 
+  pinMode(PIN_LED_1, OUTPUT);
+  pinMode(PIN_LED_2, OUTPUT);
+  pinMode(PIN_LED_3, OUTPUT);
+  pinMode(PIN_LED_ENRENGISTREMENT, OUTPUT);
+
 }
 
 
 
 void loop() {
-
 //=====================================================
 //Gestion bouton
   button1State = digitalRead(PIN_BUTTON_1);
@@ -110,12 +127,14 @@ void loop() {
     if(toogle1){
       Serial.println("----------------");
       Serial.print("Piste 1: ");
+      digitalWrite(PIN_LED_1, LOW);
       toogle1 = false;
       time_for_action_1 = 1000000000;
       Serial.println(toogle1);
     }else{
       Serial.println("----------------");
       Serial.print("Piste 1: ");
+      digitalWrite(PIN_LED_1, HIGH);
       toogle1 = true;
       time_for_action_1 = 0;
       Serial.println(toogle1);
@@ -130,12 +149,14 @@ void loop() {
     if(toogle2){
       Serial.println("----------------");
       Serial.print("Piste 2: ");
+      digitalWrite(PIN_LED_2, LOW);
       toogle2 = false;
       time_for_action_2 = 1000000000;
       Serial.println(toogle2);
     }else{
       Serial.println("----------------");
       Serial.print("Piste 2: ");
+      digitalWrite(PIN_LED_2, HIGH);
       toogle2 = true;
       time_for_action_2 = 0;
       Serial.println(toogle2);
@@ -150,12 +171,14 @@ void loop() {
     if(toogle3){
       Serial.println("----------------");
       Serial.print("Piste 3: ");
+      digitalWrite(PIN_LED_3, LOW);
       toogle3 = false;
       time_for_action_3 = 1000000000;
       Serial.println(toogle3);
     }else{
       Serial.println("----------------");
       Serial.print("Piste 3: ");
+      digitalWrite(PIN_LED_3, HIGH);
       toogle3 = true;
       time_for_action_3 = 0;
       Serial.println(toogle3);
@@ -170,11 +193,14 @@ void loop() {
     if(toogleEnrengistrement){
       Serial.println("----------------");
       Serial.println("Enrengistrement OFF");
+      digitalWrite(PIN_LED_ENRENGISTREMENT, HIGH);
       toogleEnrengistrement = false;
+   //   max_note = index
     }else{
       toogleEnrengistrement = true;
       Serial.println("----------------");
       Serial.println("Enrengistrement ON");
+      digitalWrite(PIN_LED_ENRENGISTREMENT, HIGH);
     }
   }
 
@@ -185,20 +211,7 @@ void loop() {
     matrixNote[indexPiste][indexNote[indexPiste]] = map(analogRead(PIN_POTAR_NOTE), 0, 1023, 1, 127);
     matrixVitesse[indexPiste][indexNote[indexPiste]] = map(analogRead(PIN_POTAR_VITESSE), 0, 1023, 500, 2000);
     matrixInstrument[indexPiste][indexInstrument[indexPiste]] = map(analogRead(PIN_POTAR_INSTRUMENT), 0, 1023, 1, 127);
-/*
-    Serial.println("------------------------");
-    Serial.print("indexPiste:");
-    Serial.println(indexPiste);
-    Serial.print("indexNote:");
-    Serial.println(indexNote[indexPiste]);
-    Serial.print("Note:");
-    Serial.println(matrixNote[indexPiste][indexNote[indexPiste]]);
-    Serial.print("Vitesse:");
-    Serial.println(matrixVitesse[indexPiste][indexNote[indexPiste]]);
-    Serial.print("Instrument:");
-    Serial.println(matrixInstrument[indexPiste][indexInstrument[indexPiste]]);
-    Serial.println("------------------------");
-*/
+
   }
 
 //=====================================================
@@ -216,7 +229,7 @@ void loop() {
     Serial.println(matrixNote[0][indexNote[0]]);
 
     indexNote[0]++;
-    if(indexNote[0] >= MAX_NOTE){
+    if(indexNote[0] >= max_note){
       indexNote[0] = 0;
     }
     indexInstrument[0]++;
@@ -238,7 +251,7 @@ void loop() {
     Serial.println(matrixNote[1][indexNote[1]]);
 
     indexNote[1]++;
-    if(indexNote[1] >= MAX_NOTE){
+    if(indexNote[1] >= max_note){
       indexNote[1] = 0;
     }
     indexInstrument[1]++;
@@ -261,7 +274,7 @@ void loop() {
     Serial.println(matrixNote[2][indexNote[2]]);
 
     indexNote[2]++;
-    if(indexNote[2] >= MAX_NOTE){
+    if(indexNote[2] >= max_note){
       indexNote[2] = 0;
     }
     indexInstrument[2]++;
